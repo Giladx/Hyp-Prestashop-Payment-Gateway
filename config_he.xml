@@ -2,7 +2,7 @@
 <module>
     <name>giladx_hyp</name>
     <displayName><![CDATA[Pay with HYP (Yaad Sarig) Payment]]></displayName>
-    <version><![CDATA[2.0.1]]></version>
+    <version><![CDATA[4.3.0]]></version>
     <description><![CDATA[Pay with HYP (Yaad Sarig) Payment]]></description>
     <author><![CDATA[Gilad Levi]]></author>
     <tab><![CDATA[Yaad]]></tab>

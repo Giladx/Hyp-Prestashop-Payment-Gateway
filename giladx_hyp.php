@@ -18,7 +18,7 @@ class giladx_hyp extends PaymentModule
     {
         $this->name = 'giladx_hyp';
         $this->tab = 'payments_gateways';
-        $this->version = '4.1.0';
+        $this->version = '4.3.0';
         $this->ps_versions_compliancy = array('min' => '1.7', 'max' => '8.2.0'); // Updated for 8.2.x compatibility
         $this->author = 'Gilad Levi';
         $this->controllers = array('validation');
@@ -40,10 +40,24 @@ class giladx_hyp extends PaymentModule
 
     public function install()
     {
-        return parent::install() && 
-               $this->registerHook('paymentOptions') && 
-               $this->registerHook('paymentReturn');
+    return parent::install() && 
+           $this->registerHook('paymentOptions') && 
+           $this->registerHook('paymentReturn') && 
+           $this->addMenu(); // Add this line to register the menu item
     }
+
+    private function addMenu()
+    {
+    $id_parent = (int)Tab::getIdFromClassName('AdminPayment'); // Get the ID of the Payment tab
+    $tab = new Tab();
+    $tab->class_name = 'AdminGiladxHyp'; // Unique class name for your module
+    $tab->module = $this->name; // Module name
+    $tab->id_parent = $id_parent; // Set the parent ID to Payment
+    $tab->name = array_fill_keys(Language::getIDs(), 'HYP Module'); // Set the name for all languages
+    $tab->active = 1; // Set the tab to active
+    $tab->position = Tab::getNextPosition(); // Set the position of the tab
+    return $tab->add(); // Add the tab
+    } 
 
     public function hookPaymentOptions($params)
     {
@@ -460,14 +474,28 @@ class giladx_hyp extends PaymentModule
 
     public function uninstall()
     {
-        Configuration::deleteByName('GILADX_HYP_SPLIT');
-        Configuration::deleteByName('GILADX_HYP_PASSWORD');
-        Configuration::deleteByName('GILADX_HYP_TERMNO');
-        Configuration::deleteByName('GILADX_HYP_POSTPONE');
-        Configuration::deleteByName('GILADX_HYP_PRITIM');
-        Configuration::deleteByName('GILADX_HYP_TMP');
-        Configuration::deleteByName('GILADX_HYP_USERNAME');
-        Configuration::deleteByName('GILADX_HYP_PASSWORD_FIELD');
-        return parent::uninstall();
+    // Delete configuration values
+    Configuration::deleteByName('GILADX_HYP_SPLIT');
+    Configuration::deleteByName('GILADX_HYP_PASSWORD');
+    Configuration::deleteByName('GILADX_HYP_TERMNO');
+    Configuration::deleteByName('GILADX_HYP_POSTPONE');
+    Configuration::deleteByName('GILADX_HYP_PRITIM');
+    Configuration::deleteByName('GILADX_HYP_TMP');
+    Configuration::deleteByName('GILADX_HYP_USERNAME');
+    Configuration::deleteByName('GILADX_HYP_PASSWORD_FIELD');
+    // Remove the menu item
+    $this->removeMenu();
+    return parent::uninstall();
+    }
+
+
+    private function removeMenu()
+    {
+    $id_tab = (int)Tab::getIdFromClassName('AdminGiladxHyp'); // Get the ID of your tab
+    if ($id_tab) {
+        $tab = new Tab($id_tab);
+        return $tab->delete(); // Delete the tab
+    }
+    return true;
     }
 }
