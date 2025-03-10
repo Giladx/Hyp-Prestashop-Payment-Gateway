@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>giladx_hyp</name>
+    <displayName><![CDATA[Pay with HYP (Yaad Sarig) Payment]]></displayName>
+    <version><![CDATA[2.0.1]]></version>
+    <description><![CDATA[Pay with HYP (Yaad Sarig) Payment]]></description>
+    <author><![CDATA[Gilad Levi]]></author>
+    <tab><![CDATA[Yaad]]></tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>1</need_instance>
+	<limited_countries></limited_countries>
+</module>
