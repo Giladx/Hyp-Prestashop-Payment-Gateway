@@ -18,7 +18,7 @@ class giladx_hyp extends PaymentModule
     {
         $this->name = 'giladx_hyp';
         $this->tab = 'payments_gateways';
-        $this->version = '4.0.0';
+        $this->version = '4.1.0';
         $this->ps_versions_compliancy = array('min' => '1.7', 'max' => '8.2.0'); // Updated for 8.2.x compatibility
         $this->author = 'Gilad Levi';
         $this->controllers = array('validation');
@@ -95,6 +95,8 @@ class giladx_hyp extends PaymentModule
         $Postpone = Configuration::get('GILADX_HYP_POSTPONE', false) ? 'True' : 'False';
         $Pritim = Configuration::get('GILADX_HYP_PRITIM', false) ? 'True' : 'False';
         $tmp = Configuration::get('GILADX_HYP_TMP');
+        $username = Configuration::get('GILADX_HYP_USERNAME');
+        $password = Configuration::get('GILADX_HYP_PASSWORD_FIELD');
 
         $itemArray = '';
         foreach ($cart->getProducts() as $cartProductsVal) {
@@ -244,8 +246,74 @@ class giladx_hyp extends PaymentModule
 
     public function getContent()
     {
-        $this->_postProcess();
-        return $this->renderForm();
+       $this->_postProcess();
+       $currentDomain = Tools::getShopDomain(true); // Get the current domain
+       // Force HTTPS if the current domain is HTTP
+       if (strpos($currentDomain, 'http://') === 0) {
+           $currentDomain = 'https://' . substr($currentDomain, 7); // Replace http with https
+       }
+       $redirectLink = $currentDomain . '/?fc=module&module=' . $this->name . '&controller=validation';
+
+    // Prepare the HTML for the copy link with modern design
+
+    $this->_html .= '<div style="margin-bottom: 20px; background-color: #333; padding: 15px; border-radius: 5px; position: relative;">';
+    $this->_html .= '<label style="color: #fff;">' . $this->l('Redirect Link:') . '</label>';
+    $this->_html .= '<div id="redirectLink" title="' . htmlspecialchars($redirectLink) . '" style="width: calc(100% - 40px); padding: 10px; border: none; border-radius: 5px; margin-top: 10px; background-color: #444; color: #fff; cursor: pointer;">';
+    $this->_html .= htmlspecialchars($redirectLink);
+    $this->_html .= '</div>';
+    $this->_html .= '<button id="copyButton" style="position: absolute; right: 10px; top: 10px; background: none; border: none; cursor: pointer; color: #fff; font-size: 18px;" title="' . $this->l('Copy Link') . '">';
+    $this->_html .= '<i class="material-icons">content_copy</i>'; // Using Material Icons for the copy icon
+    $this->_html .= '</button>';
+    $this->_html .= '</div>';
+
+
+    // Add JavaScript for the copy functionality
+
+    $this->_html .= '<script>
+    document.getElementById("copyButton").addEventListener("click", function() {
+        var copyText = document.getElementById("redirectLink").innerText; // Get the text from the div
+        navigator.clipboard.writeText(copyText).then(function() {
+            alert("' . $this->l('Success Redirect Link copied to clipboard!') . '");
+        }, function(err) {
+            console.error("Could not copy text: ", err);
+        });
+    });
+    </script>';
+
+    // Get the values for the buttons
+
+    $masof = Configuration::get('GILADX_HYP_TERMNO');
+    $username = Configuration::get('GILADX_HYP_USERNAME');
+    $password = Configuration::get('GILADX_HYP_PASSWORD_FIELD');
+
+
+    // Add the buttons below the form
+
+    $this->_html .= '<div class="tab-pane active" id="tab-login" style="margin-top: 15px;">';
+    $this->_html .= '<a href="#" onclick="window.open(\'https://pay.hyp.co.il/p3/?action=login&Masof=' . $masof . '&User=' . $username . '&Pass=' . $password . '\', \'yaadpay\', \'resizable,top=500,left=500,width=800,height=600\'); return false;" class="btn btn-default" style="color: #fff;background-color: #007a0e;border-color: #ddd;">Stay in Store</a>';
+    $this->_html .= '<a href="https://pay.hyp.co.il/p3/?action=login&Masof=' . $masof . '&User=' . $username . '&Pass=' . $password . '" target="_blank" class="btn btn-default" style="color: #fff;background-color: #007a0e;border-color: #ddd;">Open in New Tab</a>';
+    $this->_html .= '</div>';
+
+    // Add JavaScript for the copy functionality
+
+    $this->_html .= '<script>
+        document.getElementById("copyButton").addEventListener("click", function() {
+            var copyText = document.getElementById("redirectLink");
+            copyText.select();
+            document.execCommand("copy");
+            alert("' . $this->l('Link copied to clipboard!') . '");
+        });
+    </script>';
+
+    $this->_html .= '<script>
+        document.getElementById("copyButton").addEventListener("click", function() {
+            var copyText = document.getElementById("redirectLink");
+            copyText.select();
+            document.execCommand("copy");
+            alert("' . $this->l('Link copied to clipboard!') . '");
+        });
+    </script>';
+    return $this->_html . $this->renderForm(); return $this->renderForm();
     }
 
     protected function _postProcess()
@@ -292,6 +360,8 @@ class giladx_hyp extends PaymentModule
             'GILADX_HYP_POSTPONE' => Configuration::get('GILADX_HYP_POSTPONE', null),
             'GILADX_HYP_PRITIM' => Configuration::get('GILADX_HYP_PRITIM', null),
             'GILADX_HYP_TMP' => Configuration::get('GILADX_HYP_TMP', null),
+            'GILADX_HYP_USERNAME' => Configuration::get('GILADX_HYP_USERNAME', null),
+            'GILADX_HYP_PASSWORD_FIELD' => Configuration::get('GILADX_HYP_PASSWORD_FIELD', null),
         );
     }
 
@@ -366,6 +436,20 @@ class giladx_hyp extends PaymentModule
                         'name' => 'GILADX_HYP_TMP',
                         'label' => $this->l('Template Number'),
                     ),
+                    array(
+                        'col' => 6,
+                        'type' => 'text',
+                        'name' => 'GILADX_HYP_USERNAME',
+                        'label' => $this->l('Hyp User'),
+                        'attributes' => array('autocomplete' => 'off'),
+                    ),
+                    array(
+                        'col' => 7,
+                        'type' => 'password',
+                        'name' => 'GILADX_HYP_PASSWORD_FIELD',
+                        'label' => $this->l('Hyp Pass'),
+                        'attributes' => array('autocomplete' => 'off'),
+                    ),
                 ),
                 'submit' => array(
                     'title' => $this->l('Save'),
@@ -382,6 +466,8 @@ class giladx_hyp extends PaymentModule
         Configuration::deleteByName('GILADX_HYP_POSTPONE');
         Configuration::deleteByName('GILADX_HYP_PRITIM');
         Configuration::deleteByName('GILADX_HYP_TMP');
+        Configuration::deleteByName('GILADX_HYP_USERNAME');
+        Configuration::deleteByName('GILADX_HYP_PASSWORD_FIELD');
         return parent::uninstall();
     }
 }
